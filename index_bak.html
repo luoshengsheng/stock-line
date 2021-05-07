@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <!-- 引入 ECharts 文件 -->
+        <script src="./js/echarts.min.js"></script>
+    </head>
+    <body>
+    <input type="text" id="stock_code" value="601066.SH" placeholder="输入股票代码,eg 600000.sh"/>
+    <input type="button" value="触发请求" onclick="post(cal)" /><br><br>
+
+        <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+        <div style="width: 100%;height:80%;">
+            <div id="main" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+            <div id="main1" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+            <div id="main2" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+            <div id="main3" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+            <div id="main4" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+
+        </div>
+        <script type="text/javascript">
+// ajax 对象
+function ajaxObject() {
+    var xmlHttp;
+    try {
+        // Firefox, Opera 8.0+, Safari
+        xmlHttp = new XMLHttpRequest();
+        } 
+    catch (e) {
+        // Internet Explorer
+        try {
+                xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
+            } catch (e) {
+            try {
+                xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+            } catch (e) {
+                alert("您的浏览器不支持AJAX！");
+                return false;
+            }
+        }
+    }
+    return xmlHttp;
+}
+function ajaxPost ( url , data , fnSucceed , fnFail , fnLoading ) {
+    var ajax = ajaxObject();
+    ajax.open( "post" , url , true );
+    ajax.setRequestHeader( "Content-Type" , "application/x-www-form-urlencoded" );
+    ajax.onreadystatechange = function () {
+        if( ajax.readyState == 4 ) {
+            if( ajax.status == 200 ) {
+                fnSucceed( ajax.responseText );
+            }
+            else {
+                fnFail( "HTTP请求错误！错误码："+ajax.status );
+            }
+        }
+        else {
+            fnLoading();
+        }
+    }
+    ajax.send( data );
+ 
+}
+
+function ajaxGet ( url , data , fnSucceed , fnFail , fnLoading ) {
+    var ajax = ajaxObject();
+    ajax.open( "get" , url , true );
+    ajax.setRequestHeader( "Content-Type" , "application/x-www-form-urlencoded" );
+    ajax.onreadystatechange = function () {
+        if( ajax.readyState == 4 ) {
+            if( ajax.status == 200 ) {
+                fnSucceed( ajax.responseText );
+            }
+            else {
+                fnFail( "HTTP请求错误！错误码："+ajax.status );
+            }
+        }
+        else {
+            fnLoading();
+        }
+    }
+    ajax.send( data );
+ 
+}
+
+function cal(data){
+    //var data=post();
+    var json = JSON.parse(data);
+    var stock_hq=new Array();
+    var stock_hq1=new Array();
+    var stock_hq2=new Array();
+    var stock_hq3=new Array();
+    var stock_hq4=new Array();
+    var hq_array=json.results;
+    var last_hq
+    var hq4_index=0
+    for( var key in hq_array ){
+        var hq=hq_array[key]
+        var date=hq[0] // 日期
+        var open=hq[1] // 开盘价
+        var high=hq[2] // 最高价
+        var close= hq[3] // 收盘价
+        var low= hq[4] // 最低价
+
+
+        var hq_new=[date,open,close,low,high];
+        var hq_new2=[hq[0],hq[1],hq[3],hq[4],hq[2]];
+        var hq_up;
+        var hq_down
+        var hq4
+        
+        //红
+        if(open<close){
+            hq_new2=[date,low,high,low,high];
+            hq_up=[date,low,high,low,high];
+            hq_down=[date,open,open,open,open];
+        }
+        //绿
+        else{
+            //low<close<open<high
+            hq_new2=[date,high,low,high,low];
+            hq_down=[date,open,low,open,low];
+            hq_up=[date,open,open,open,open];
+        }
+        if (last_hq) {
+            var last_low=last_hq[3];
+            var last_high=last_hq[4];
+            var hq4_datarow
+            if (low>last_low && high<last_high) {
+                hq4=[last_hq[0],last_hq[1],last_hq[2],last_hq[3],last_hq[4]];
+            }else if (low<last_low && high>last_high){
+                hq4=[hq_new2[0],hq_new2[1],hq_new2[2],hq_new2[3],hq_new2[4]];
+            }else{
+                hq4=[hq_new2[0],hq_new2[1],hq_new2[2],hq_new2[3],hq_new2[4]]
+                hq4_index++;
+            };
+            stock_hq4[key]
+            last_hq=[hq4[0],hq4[1],hq4[2],hq4[3],hq4[4]];
+        }else{
+
+            last_hq=[date,open,close,low,high];
+            hq4=[date,open,close,low,high];
+            
+        };
+        console.log(hq4_index)
+        console.log(hq4.length)
+        console.log("hq4"+hq4)
+        if (hq4.length==4) {
+            console.log(hq4)
+        } else{};
+        stock_hq4[hq4_index]=hq4;
+        stock_hq[key]=hq_new;
+        stock_hq1[key]=hq_new2;
+        stock_hq2[key]=hq_up;
+        stock_hq3[key]=hq_down;
+    }
+
+    var myChart1=initChart(stock_hq,"main")
+    var myChart2=initChart(stock_hq1,"main1")
+    var myChart3=initChart(stock_hq2,"main2")
+    var myChart4=initChart(stock_hq3,"main3")
+    var myChart5=initChart(stock_hq4,"main4")
+    echarts.connect([myChart1,myChart2,myChart3,myChart4]);
+    //设定事件
+/*                myChart1.on('legendselectchanged',function(params) {
+    var legend=myChart1.getModel().option.legend
+    var option2=myChart2.getModel().option
+    var option3=myChart3.getModel().option
+    var option4=myChart4.getModel().option
+    option2.legend=legend;
+    option3.legend=legend;
+    option4.legend=legend;
+    myChart2.setOption(option2);
+    myChart3.setOption(option3);
+    myChart4.setOption(option4);
+
+})*/
+    //setDataZoom(myChart1,myChart2,myChart3,myChart4);
+    //setDataZoom(myChart2,myChart1,myChart3,myChart4);
+    //setDataZoom(myChart3,myChart2,myChart1,myChart4);
+    //setDataZoom(myChart4,myChart2,myChart3,myChart1);
+
+
+    //设定事件
+
+}
+
+
+function post(callback){
+    var postData = {
+    "funcno": "20044",
+    "version": "1",
+    "stock_code":"600000",
+    "market":"SH",
+    "count":"100",
+    "type":"day",
+    "FQType":"1"
+    };
+
+
+
+    var stock_code_str=document.getElementById("stock_code").value.split(".")
+   
+    //?funcno=20044&version=1&stock_code=600000&market=SH&count=100&type=day
+    var stock_code=document.getElementById("stock_code").value;
+    var hqurl="http://120.78.213.244:8888/market/json?funcno=20044&version=1&stock_code="+stock_code_str[0]+"&market="+stock_code_str[1]+"&count=300&type=day";
+    
+    //ajaxPost ( hqurl , postData , function (text, status) { alert(text); } ) 
+
+
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", hqurl, true);
+    //xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+    xhr.send(JSON.stringify(postData));
+    xhr.onreadystatechange = function(){
+        
+        var XMLHttpReq = xhr;
+        /**
+            XMLHttpReq.readyState
+         0: 请求未初始化
+         1: 服务器连接已建立
+         2: 请求已接收
+         3: 请求处理中
+         4: 请求已完成，且响应已就绪
+        **/
+        if (XMLHttpReq.readyState == 4) {
+            if (XMLHttpReq.status == 200) {                
+                var data = XMLHttpReq.responseText;
+                callback(data)
+                console.log(data);
+                return data;
+                
+               
+                
+            }else if(XMLHttpReq.status == 100){
+            
+            }else if(XMLHttpReq.status == 300){
+            
+            }else if(XMLHttpReq.status == 400){
+            
+            }else if(XMLHttpReq.status == 500){
+            
+            }else if(XMLHttpReq.status == 0){
+                /** 0不是http协议的状态,关于XMLHttpReq.status的说明:
+                1、If the state is UNSENT or OPENED, return 0.（如果状态是UNSENT或者OPENED，返回0）
+                2、If the error flag is set, return 0.（如果错误标签被设置，返回0）
+                3、Return the HTTP status code.（返回HTTP状态码）
+                第一种情况,例如:url请求的是本地文件,状态会是0
+                第二种情况经常出现在跨域请求中,比如url不是本身网站IP或域名,例如请求www.baidu.com时
+                第三种,正常请求本站http协议信息时,正常返回http协议状态值
+                **/
+            }
+            
+        }
+    };
+
+}
+function legendUnSelect1(){
+    alert("1");
+};
+function setDataZoom(myChart1,myChart2,myChart3,myChart4){
+
+    myChart1.on('datazoom', function (params){
+        //params是个好东西，里面有什么，可以打印出来看一下就明白
+        console.log(params);
+        //可以通过params获取缩放的起止百分比，但是鼠标滚轮和伸缩条拖动触发的params格式不同，所以用另一种方法
+        //获得图表数据数组下标
+        var startValue = myChart1.getModel().option.dataZoom[0].startValue;
+        var endValue = myChart1.getModel().option.dataZoom[0].endValue;
+        //获得起止位置百分比
+        var startPercent = myChart1.getModel().option.dataZoom[0].start;
+        var endPercent = myChart1.getModel().option.dataZoom[0].end;
+ 
+        console.log(startValue,endValue,startPercent,endPercent);
+        var option2 =myChart2.getModel().option
+        option2.dataZoom[0].start = startPercent;
+        option2.dataZoom[0].end = endPercent;
+        myChart2.setOption(option2);
+        var option3 =myChart3.getModel().option
+        option3.dataZoom[0].start = startPercent;
+        option3.dataZoom[0].end = endPercent;
+        myChart3.setOption(option3);
+        var option4 =myChart4.getModel().option
+        option4.dataZoom[0].start = startPercent;
+        option4.dataZoom[0].end = endPercent;
+        myChart4.setOption(option4);
+    });
+}
+
+
+function initChart(data,domName){
+
+
+
+var chartDom = document.getElementById(domName);
+var myChart = echarts.init(chartDom);
+var option;
+
+var upColor = '#ec0000';
+var upBorderColor = '#8A0000';
+var downColor = '#00da3c';
+var downBorderColor = '#008F28';
+
+
+// 数据意义：开盘(open)，收盘(close)，最低(lowest)，最高(highest)
+var data0 = splitData(data);
+
+
+function splitData(rawData) {
+    var categoryData = [];
+    var values = []
+    for (var i = 0; i < rawData.length; i++) {
+        categoryData.push(rawData[i].splice(0, 1)[0]);
+        values.push(rawData[i])
+    }
+    return {
+        categoryData: categoryData,
+        values: values
+    };
+}
+
+function calculateMA(dayCount) {
+    var result = [];
+    for (var i = 0, len = data0.values.length; i < len; i++) {
+        if (i < dayCount) {
+            result.push('-');
+            continue;
+        }
+        var sum = 0;
+        for (var j = 0; j < dayCount; j++) {
+            sum += data0.values[i - j][1];
+        }
+        result.push((sum / dayCount).toFixed(2));
+    }
+    return result;
+}
+
+
+
+option = {
+    title: {
+        text: '上证指数',
+        left: 0
+    },
+    tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+            type: 'cross'
+        }
+    },
+    legend: {
+        data: ['日K', 'MA5', 'MA10', 'MA20', 'MA30']
+    },
+    grid: {
+        left: '10%',
+        right: '10%',
+        bottom: '15%'
+    },
+    xAxis: {
+        type: 'category',
+        data: data0.categoryData,
+        scale: true,
+        boundaryGap: false,
+        axisLine: {onZero: false},
+        splitLine: {show: false},
+        splitNumber: 20,
+        min: 'dataMin',
+        max: 'dataMax'
+    },
+    yAxis: {
+        scale: true,
+        splitArea: {
+            show: true
+        }
+    },
+    dataZoom: [
+        {
+            type: 'inside',
+            start: 50,
+            end: 100
+        },
+        {
+            show: true,
+            type: 'slider',
+            top: '90%',
+            start: 50,
+            end: 100
+        }
+    ],
+    series: [
+        {
+            name: '日K',
+            type: 'candlestick',
+            data: data0.values,
+            itemStyle: {
+                color: upColor,
+                color0: downColor,
+                borderColor: upBorderColor,
+                borderColor0: downBorderColor
+            },
+            markPoint: {
+                label: {
+                    normal: {
+                        formatter: function (param) {
+                            return param != null ? Math.round(param.value) : '';
+                        }
+                    }
+                },
+                data: [
+                    {
+                        name: 'XX标点',
+                        coord: ['2013/5/31', 2300],
+                        value: 2300,
+                        itemStyle: {
+                            color: 'rgb(41,60,85)'
+                        }
+                    },
+                    {
+                        name: 'highest value',
+                        type: 'max',
+                        valueDim: 'highest'
+                    },
+                    {
+                        name: 'lowest value',
+                        type: 'min',
+                        valueDim: 'lowest'
+                    },
+                    {
+                        name: 'average value on close',
+                        type: 'average',
+                        valueDim: 'close'
+                    }
+                ],
+                tooltip: {
+                    formatter: function (param) {
+                        return param.name + '<br>' + (param.data.coord || '');
+                    }
+                }
+            },
+            markLine: {
+                symbol: ['none', 'none'],
+                data: [
+                    [
+                        {
+                            name: 'from lowest to highest',
+                            type: 'min',
+                            valueDim: 'lowest',
+                            symbol: 'circle',
+                            symbolSize: 10,
+                            label: {
+                                show: false
+                            },
+                            emphasis: {
+                                label: {
+                                    show: false
+                                }
+                            }
+                        },
+                        {
+                            type: 'max',
+                            valueDim: 'highest',
+                            symbol: 'circle',
+                            symbolSize: 10,
+                            label: {
+                                show: false
+                            },
+                            emphasis: {
+                                label: {
+                                    show: false
+                                }
+                            }
+                        }
+                    ],
+                    {
+                        name: 'min line on close',
+                        type: 'min',
+                        valueDim: 'close'
+                    },
+                    {
+                        name: 'max line on close',
+                        type: 'max',
+                        valueDim: 'close'
+                    }
+                ]
+            }
+        },
+        {
+            name: 'MA5',
+            type: 'line',
+            data: calculateMA(5),
+            smooth: true,
+            select:false,
+            lineStyle: {
+                opacity: 0.5
+            }
+        },
+        {
+            name: 'MA10',
+            type: 'line',
+            data: calculateMA(10),
+            smooth: true,
+            select:false,
+            lineStyle: {
+                opacity: 0.5
+            }
+        },
+        {
+            name: 'MA20',
+            type: 'line',
+            data: calculateMA(20),
+            smooth: true,
+            select:false,
+            lineStyle: {
+                opacity: 0.5
+            }
+        },
+        {
+            name: 'MA30',
+            type: 'line',
+            data: calculateMA(30),
+            smooth: true,
+            select:false,
+            lineStyle: {
+                opacity: 0.5
+            }
+        },
+
+    ]
+};
+
+option && myChart.setOption(option);
+return myChart;
+}
+
+
+        </script>
+    </body>
+</html>

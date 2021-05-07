@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <!-- 引入 ECharts 文件 -->
+        <script src="./js/echarts.min.js"></script>
+    </head>
+    <body>
+    <input type="text" id="stock_code" value="601066.SH" placeholder="输入股票代码,eg 600000.sh"/>
+    <input type="button" value="触发请求" onclick="cal()" /><br><br>
+
+        <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+        <div style="width: 100%;height:80%;">
+            <div id="main" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+            <div id="main1" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+            <div id="main2" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+            <div id="main3" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+            <div id="main4" style="width: 700px;height:300px;float:left;border:0px solid #000;"></div>
+
+        </div>
+        <script type="text/javascript">
+        function cal(){
+            console.log('开始');
+            var getStockListUrl="http://120.78.213.244:8888/market/json?funcno=30026&version=1&type=0:2:9:18&field=1:2:9:10:11:12:21:22:23:24";
+            var data=post(null,getStockListUrl);
+            calstockList(data);
+
+            //var hqurl="http://120.78.213.244:8888/market/json?funcno=20044&version=1&stock_code="+stock_code_str[0]+"&market="+stock_code_str[1]+"&count=300&type=day";
+
+
+        }
+
+function calHqList(hqListStr,stock_name,stock_code){
+        var hqList=JSON.parse(hqListStr).results;
+        var total=0;
+        var success1=0;
+        var success2=0;
+        var success3=0;
+        var success6=0;
+        var success10=0;
+        for (var i = 3; i < hqList.length-10; i++) {
+
+            var hq=hqList[i]
+            var hq1=hqList[i+1];
+            var hq2=hqList[i+2];
+            var hq3=hqList[i+3];
+            var hq6=hqList[i+6];
+            var hq10=hqList[i+10];
+            var hq_1=hqList[i-1];
+            var hq_3=hqList[i-3];
+            
+
+            //日期、开盘、最高价、收盘价、最低价、昨收
+            var date= hq[0] // 日期
+            var close1= hq1[3] // 收盘价
+            var close2= hq2[3] // 收盘价
+            var close3= hq3[3] // 收盘价
+            var close6= hq6[3] // 收盘价
+            var close10= hq6[3] // 收盘价
+            var close_3= hq_3[3] // 收盘价
+            var close= hq[3] // 收盘价
+            var open=hq[1] // 开盘价
+            var high=hq[2] // 最高价
+            var low= hq[4] // 最低价
+            var last_close= hq[5] // 昨收盘价
+            var upprecent= (close-last_close)/last_close; // 涨幅
+            var vol=hq[6]//成交量
+            var vol_1=hq_1[6]//成交量
+
+            var lowest_precent=(low-last_close)/last_close
+            var before_precent=(close-close_3)/close_3
+            var zheng_precent=(open-low)/(high-low)
+            //
+
+            if(lowest_precent>-0.03 || lowest_precent<-0.05||upprecent<0||before_precent<0.022
+                || zheng_precent<0.5 || close<open || vol<vol_1
+
+                ){
+                //console.log(stock[9]+':'+stock[11]+":lowest_precent:"+lowest_precent+";upprecent:"+upprecent)
+                continue;
+            }
+            total++;
+
+            var up1=close1-close;
+            var up2=close2-close;
+            var up3=close3-close;
+            var up6=close6-close;
+            var up10=close10-close;
+            if(up1>0){
+                success1++;
+            }
+             if(up2>0){
+                success2++;
+            }
+             if(up3>0){
+                success3++;
+            }
+            if(up6>0){
+                success6++;
+            }
+            if(up10>0){
+                success10++;
+            }
+            result='date:'+date+':stock_code:'+stock_code+':total-'+total+":success:"+success1+"|"+success2+"|"+success3+"|"+success6+"|"+success10
+             console.log(result)
+
+        };
+        var result='';
+        if (total>0) {
+             result='right:stock_code:'+stock_code+':total-'+total+":success:"+success1+"|"+success2+"|"+success3+";success-rate:"+(success1/total+0.001).toFixed(3)+"|"+(success2/total+0.001).toFixed(3)+"|"+(success3/total+0.001).toFixed(3)+"|"+(success6/total+0.001).toFixed(3)+"|"+(success10/total+0.001).toFixed(3)
+             console.log(result)
+
+        } ;
+        return result;
+
+}        
+function calstockList(stockListStr){
+    //console.log(stockListStr);
+    var stockList=JSON.parse(stockListStr).results;
+    for( var key in stockList ){
+        if (key==='100') {break;} else{};
+        var stock=stockList[key]
+        //console.log(stock[9]+':'+stock[11])
+        var stktype=stock[8] // 证券类别
+        var stkname=stock[9] // 证券名称
+        var market=stock[10] // 市场代码
+        var stock_code=stock[11] // 股票代码
+        //涨幅、现价、今开、最高、最低、昨收、证券类别、名称、市场代码、股票代码
+        var upprecent= stock[2] // 涨幅
+        var close= stock[3] // 收盘价
+        var open=stock[4] // 开盘价
+        var high=stock[5] // 最高价
+        
+        var low= stock[6] // 最低价
+        var last_close= stock[7] // 昨收盘价
+        //http://120.78.213.244:8888/market/json?funcno=20045&version=1&stock_code=688001&market=SH&fqtype=1&lastcount=0&count=100&type=day
+        var hqurl="http://120.78.213.244:8888/market/json?funcno=20045&version=1&fqtype=1&lastcount=0&count=100&type=day&market="+market+"&stock_code="+stock_code;
+
+        //console.log("begin:"+stock[9]+':'+stock[11])
+        var data=post(calHqList,hqurl);
+        calHqList(data,stock[9],stock[11]);
+        //console.log("right:"+stock[9]+':'+stock[11]+":"+results)
+
+
+
+
+        //最低下降到-2%~-4%
+        /*var lowest_precent=(low-last_close)/last_close
+        if(lowest_precent>-0.03 || lowest_precent<-0.04||upprecent<0){
+            //console.log(stock[9]+':'+stock[11]+":lowest_precent:"+lowest_precent+";upprecent:"+upprecent)
+            continue;
+        }
+        console.log("right:"+stock[9]+':'+stock[11]+":lowest_precent:"+lowest_precent+";upprecent:"+upprecent)*/
+
+    }
+}
+function post(callback,url){
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, false);
+    xhr.send(null);
+    if(xhr.status !== 200){
+        throw new Error('..');
+    }
+    var data = xhr.responseText;
+                //console.log(data);
+    return data;
+
+   
+
+}
+
+
+
+
+        </script>
+    </body>
+</html>
